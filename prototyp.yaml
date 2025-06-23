@@ -102,7 +102,7 @@ binary_sensor:
       - logger.log: "Soil 34 is DRY - Opening valve 33 and pump 32"
       - switch.turn_on: water_valve_33
       - switch.turn_on: water_pump_32
-      - delay: 5s
+      - delay: 10s
       - if:
           condition:
             or:
@@ -128,7 +128,7 @@ binary_sensor:
       - logger.log: "Soil 35 is DRY - Opening valve 25 and pump 32"
       - switch.turn_on: water_valve_25
       - switch.turn_on: water_pump_32
-      - delay: 5s
+      - delay: 10s
       - if:
           condition:
             or:
