@@ -1,0 +1,166 @@
+esphome:
+  name: smart-planting-prototyp
+  friendly_name: smart-planting-prototyp
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+  # level: INFO
+  # logs:
+    # switch: NONE
+
+api:
+  encryption:
+    key: "ucrTW1A/sa3CSU6bQ/GMsIJQLQylGlfS8U+I7qNmkts="
+
+ota:
+  - platform: esphome
+    password: "6f200db101b64a904e6fb0e88e7030f1"
+
+wifi:
+  ssid: "ZEKI-IoT"
+  password: "ToI-IKEZ"
+  fast_connect: true
+
+  ap:
+    ssid: "ZEKI-PSK"
+    password: "ikezikez"
+
+captive_portal:
+
+# -------------------
+# --- Sensors ---
+sensor:
+  # Capacitive soil sensor on GPIO34
+  - platform: adc
+    pin: GPIO34
+    id: soil_sensor_34
+    name: "Soil sensor GPIO34"
+    update_interval: 5s
+    attenuation: 11db
+    # accuracy_decimals: 2
+    # filters:
+    #   - sliding_window_moving_average:
+    #       window_size: 5
+    #       send_every: 1
+
+  # Capacitive soil sensor on GPIO35
+  - platform: adc
+    pin: GPIO35
+    id: soil_sensor_35
+    name: "Soil sensor GPIO35"
+    update_interval: 5s
+    attenuation: 11db
+    # accuracy_decimals: 2
+    # filters:
+    #   - sliding_window_moving_average:
+    #       window_size: 5
+    #       send_every: 1
+
+# -------------------
+# --- Switches ---
+switch:
+  # Water Pump GPIO32
+  - platform: gpio
+    pin: GPIO32
+    # inverted: true
+    id: water_pump_32
+    name: "Water Pump GPIO32"
+    internal: false
+    restore_mode: RESTORE_DEFAULT_OFF 
+
+  # Water Valve GPIO33
+  - platform: gpio
+    pin: GPIO33
+    # inverted: true
+    id: water_valve_33
+    name: "Water Valve GPIO33"
+    internal: false
+    restore_mode: RESTORE_DEFAULT_OFF
+  
+  # Water Valve GPIO25
+  - platform: gpio
+    pin: GPIO25
+    # inverted: true
+    id: water_valve_25
+    name: "Water Valve GPIO25"
+    internal: false
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# -------------------
+# --- Automation ---
+binary_sensor:
+  # Control water_valve_33 based on soil_sensor_34
+  - platform: template
+    name: "Soil Sensor 34 Trigger"
+    lambda: |-
+      return id(soil_sensor_34).state < 2.0;
+    on_press:
+      - logger.log: "Soil 34 is DRY - Opening valve 33 and pump 32"
+      - switch.turn_on: water_valve_33
+      - switch.turn_on: water_pump_32
+      - delay: 5s
+      - if:
+          condition:
+            or:
+              - switch.is_on: water_valve_33
+              - switch.is_on: water_pump_32
+          then:
+            - logger.log: "Soil 32 is FLOODING - Closing valve 33 and pump 32"
+            - switch.turn_off: water_valve_33
+            - switch.turn_off: water_pump_32
+
+    on_release:
+      - logger.log: "Soil 34 is WET - Closing valve 33 and pump 32"
+      - switch.turn_off: water_valve_33
+      - switch.turn_off: water_pump_32
+    internal: true
+
+# Control water_valve_25 based on soil_sensor_35
+  - platform: template
+    name: "Soil Sensor 35 Trigger"
+    lambda: |-
+      return id(soil_sensor_35).state < 2.0;
+    on_press:
+      - logger.log: "Soil 35 is DRY - Opening valve 25 and pump 32"
+      - switch.turn_on: water_valve_25
+      - switch.turn_on: water_pump_32
+      - delay: 5s
+      - if:
+          condition:
+            or:
+              - switch.is_on: water_valve_25
+              - switch.is_on: water_pump_32
+          then:
+            - logger.log: "Soil 35 is FLOODING - Closing valve 25 and pump 32"
+            - switch.turn_off: water_valve_25
+            - switch.turn_off: water_pump_32
+    on_release:
+      - logger.log: "Soil 35 is WET - Closing valve 25 and pump 32"
+      - switch.turn_off: water_valve_25
+      - switch.turn_off: water_pump_32
+    internal: true
+
+# -------------------
+# --- Debug functions ---
+# interval:
+#   - interval: 20s
+#     then:
+#       - switch.turn_on: water_pump_32
+#       - switch.turn_off: water_valve_33
+#       - switch.turn_off: water_valve_25
+#       - delay: 5s
+#       - switch.turn_off: water_pump_32
+#       - switch.turn_on: water_valve_33
+#       - switch.turn_off: water_valve_25
+#       - delay: 5s
+#       - switch.turn_off: water_pump_32 
+#       - switch.turn_off: water_valve_33
+#       - switch.turn_on: water_valve_25
+#       - delay: 5s
+#       - switch.turn_off: water_pump_32
+#       - switch.turn_off: water_valve_25
+#       - switch.turn_off: water_valve_33
